@@ -1,0 +1,58 @@
+name: Vibe Check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: vibe-check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  DO_NOT_TRACK: 1
+  TURBO_TELEMETRY_DISABLED: 1
+  VERCEL_TELEMETRY_DISABLED: 1
+
+jobs:
+  vibe-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm 📦
+        uses: pnpm/action-setup@v4
+        # use version from package.json#packageManager field
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install Dependencies 📥
+        run: |
+          pnpm install
+
+      - name: Fmt, Lint, and Type Check 🧹
+        run: | # Run the lint and type check
+          pnpm run typecheck
+          pnpm run lint
+          pnpm run fmt:check
+
+      - name: Test 🧪
+        run: | # Run the tests
+          pnpm run test
+
+      - name: Ensure Package is Publishable 🧐
+        run: | # Run the prepublish hook to ensure the package is publishable, and that the package.json is up to date
+          pnpm run prepublishOnly
+          git diff --exit-code

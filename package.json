@@ -1,0 +1,62 @@
+{
+  "name": "@ngrok/remark-mdx-github-alerts",
+  "version": "0.1.0",
+  "description": "Remark plugin that transforms GitHub-style alert blockquotes into MDX JSX elements.",
+  "keywords": [
+    "mdast",
+    "mdx",
+    "remark",
+    "remark-plugin",
+    "unified"
+  ],
+  "url": "https://github.com/ngrok-oss/remark-mdx-github-alerts",
+  "license": "MIT",
+  "author": "ngrok",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ngrok-oss/remark-mdx-github-alerts"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "type": "module",
+  "packageManager": "pnpm@10.29.3",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "pnpm run compile",
+    "changeset": "changeset",
+    "compile": "tsc --project tsconfig.compile.json",
+    "fmt:check": "oxfmt --check .",
+    "fmt": "oxfmt --write .",
+    "lint:fix": "oxlint --fix .",
+    "lint": "oxlint .",
+    "precompile": "rm -rf dist tsconfig.compile.tsbuildinfo",
+    "prepublishOnly": "pnpm run compile",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "unist-util-visit": "5.1.0"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "0.5.2",
+    "@changesets/cli": "2.29.8",
+    "@mdx-js/mdx": "3.1.1",
+    "@total-typescript/ts-reset": "0.6.1",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "24.10.12",
+    "mdast-util-mdx-jsx": "3.2.0",
+    "oxfmt": "0.28.0",
+    "oxlint": "1.43.0",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
+  }
+}
