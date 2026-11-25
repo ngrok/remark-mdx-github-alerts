@@ -95,6 +95,25 @@ describe("remarkMdxGithubAlerts", () => {
 		expect(body).toContain(`<_components.p>${text}</_components.p>`);
 	});
 
+	it("keeps a nonbreaking space at the start of the body", async () => {
+		const body = extractJsxBody(await mdxToJsx("> [!NOTE]\n> &nbsp;Indented"));
+		expect(body).toContain("\u00A0Indented");
+	});
+
+	it("keeps a hard break on the first body line", async () => {
+		const body = extractJsxBody(await mdxToJsx("> [!NOTE]\n> \\\n> Body"));
+		expect(body).toContain("<_components.br />");
+	});
+
+	it.each([
+		["two trailing spaces", "> [!NOTE]  \n> Body"],
+		["a backslash", "> [!NOTE]\\\n> Body"],
+	])("removes a hard break of %s that ends the marker line", async (_name, md) => {
+		const body = extractJsxBody(await mdxToJsx(md));
+		expect(body).not.toContain("<_components.br />");
+		expect(body).toContain('<_components.p>{"Body"}</_components.p>');
+	});
+
 	it("handles a link inside the alert body", async () => {
 		const md = `> [!TIP]\n> Check [this link](https://example.com)`;
 		const body = extractJsxBody(await mdxToJsx(md));

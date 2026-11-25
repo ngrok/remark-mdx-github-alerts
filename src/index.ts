@@ -3,8 +3,9 @@ import type { MdxJsxFlowElement } from "mdast-util-mdx-jsx";
 
 import { visit } from "unist-util-visit";
 
-// Why `\s*`: it removes the spaces and the line ending (LF or CRLF) after the marker in one step.
-const alertMarker = /^\[!(?<type>note|tip|important|warning|caution)\]\s*/iu;
+// Why not `\s*`: it also matches U+00A0, which `&nbsp;` at the start of the body decodes to. The
+// pattern removes only the spaces and the line ending (LF or CRLF) of the marker line.
+const alertMarker = /^\[!(?<type>note|tip|important|warning|caution)\][ \t]*(?<eol>\r?\n)?/iu;
 
 /**
  * Remark plugin that transforms GitHub-style alert blockquotes into MDX JSX
@@ -35,14 +36,16 @@ function remarkMdxGithubAlerts(): (tree: Root) => undefined {
 			}
 			const match = alertMarker.exec(marker.value);
 			const type = match?.groups?.type;
+			const endsLine = match?.groups?.eol != null;
 			if (match == null || type == null) {
 				return;
 			}
 
 			const rest = marker.value.slice(match[0].length);
 			if (rest === "") {
-				// Why: a hard break (`[!NOTE]` and two spaces) ends the marker line as a node.
-				paragraph.children.splice(0, next?.type === "break" ? 2 : 1);
+				// Why: a hard break (`[!NOTE]` and two spaces) ends the marker line as a node. After a
+				// line ending, a hard break belongs to the body.
+				paragraph.children.splice(0, !endsLine && next?.type === "break" ? 2 : 1);
 			} else {
 				marker.value = rest;
 			}

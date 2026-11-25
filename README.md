@@ -70,6 +70,13 @@ The plugin operates at the **mdast (Markdown AST)** level, running as a remark t
 
 The marker text is stripped and any content following it (on the same line or subsequent lines) is preserved as children of the JSX element.
 
+### Differences from GitHub
+
+GitHub renders an alert only when the marker is alone on the first line of a top-level blockquote. This plugin also transforms:
+
+- an alert with text after the marker on the same line, such as `> [!NOTE] Some text`.
+- an alert inside another element, such as a list item or another alert.
+
 ## API
 
 ### `remarkMdxGithubAlerts()`
