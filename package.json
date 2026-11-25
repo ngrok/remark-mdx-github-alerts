@@ -1,6 +1,6 @@
 {
   "name": "@ngrok/remark-mdx-github-alerts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Remark plugin that transforms GitHub-style alert blockquotes into MDX JSX elements.",
   "keywords": [
     "mdast",
