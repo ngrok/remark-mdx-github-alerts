@@ -38,12 +38,12 @@ Supported alert types: `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION` (case-in
 
 ```ts
 import mdx from "@mdx-js/rollup";
-import { remarkGithubAlerts } from "@ngrok/remark-mdx-github-alerts";
+import { remarkMdxGithubAlerts } from "@ngrok/remark-mdx-github-alerts";
 
 export default {
 	plugins: [
 		mdx({
-			remarkPlugins: [remarkGithubAlerts],
+			remarkPlugins: [remarkMdxGithubAlerts],
 		}),
 	],
 };
@@ -53,10 +53,10 @@ export default {
 
 ```ts
 import { compile } from "@mdx-js/mdx";
-import { remarkGithubAlerts } from "@ngrok/remark-mdx-github-alerts";
+import { remarkMdxGithubAlerts } from "@ngrok/remark-mdx-github-alerts";
 
 const result = await compile(mdxSource, {
-	remarkPlugins: [remarkGithubAlerts],
+	remarkPlugins: [remarkMdxGithubAlerts],
 });
 ```
 
@@ -72,7 +72,7 @@ The marker text is stripped and any content following it (on the same line or su
 
 ## API
 
-### `remarkGithubAlerts()`
+### `remarkMdxGithubAlerts()`
 
 Returns a remark transformer function. No options are needed — all alert blockquotes are processed automatically.
 

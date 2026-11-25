@@ -13,8 +13,7 @@ async function mdxToJsx(md: string): Promise<string> {
 
 /** Extract the JSX return from the _createMdxContent function. */
 function extractJsxBody(compiled: string): string {
-	const match = compiled.match(/return\s+(.*);?\s*\n\}/);
-	return match?.[1] ?? "";
+	return /return\s+(?<body>.*);?\s*\n\}/u.exec(compiled)?.groups?.body ?? "";
 }
 
 describe("remarkMdxGithubAlerts", () => {
@@ -78,6 +77,22 @@ describe("remarkMdxGithubAlerts", () => {
 		const body = extractJsxBody(await mdxToJsx(md));
 		expect(body).toContain('<GithubAlert type="note">');
 		expect(body).toContain('<GithubAlert type="warning">');
+	});
+
+	it("transforms an alert nested in another alert", async () => {
+		const md = `> [!NOTE]\n> Outer\n>\n> > [!TIP]\n> > Inner`;
+		const body = extractJsxBody(await mdxToJsx(md));
+		expect(body).toContain('<GithubAlert type="note">');
+		expect(body).toContain('<GithubAlert type="tip">');
+		expect(body).not.toContain("[!TIP]");
+	});
+
+	it.each([
+		["a CRLF line ending", "> [!NOTE]\r\n> Some text", String.raw`{"Some text"}`],
+		["text on the marker line", "> [!NOTE] Some\n> text", String.raw`{"Some\ntext"}`],
+	])("removes the whitespace after the marker with %s", async (_name, md, text) => {
+		const body = extractJsxBody(await mdxToJsx(md));
+		expect(body).toContain(`<_components.p>${text}</_components.p>`);
 	});
 
 	it("handles a link inside the alert body", async () => {
