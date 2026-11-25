@@ -13,8 +13,7 @@ async function mdxToJsx(md: string): Promise<string> {
 
 /** Extract the JSX return from the _createMdxContent function. */
 function extractJsxBody(compiled: string): string {
-	const match = compiled.match(/return\s+(.*);?\s*\n\}/);
-	return match?.[1] ?? "";
+	return /return\s+(?<body>.*);?\s*\n\}/u.exec(compiled)?.groups?.body ?? "";
 }
 
 describe("remarkMdxGithubAlerts", () => {
@@ -78,6 +77,42 @@ describe("remarkMdxGithubAlerts", () => {
 		const body = extractJsxBody(await mdxToJsx(md));
 		expect(body).toContain('<GithubAlert type="note">');
 		expect(body).toContain('<GithubAlert type="warning">');
+	});
+
+	it("transforms an alert nested in another alert", async () => {
+		const md = `> [!NOTE]\n> Outer\n>\n> > [!TIP]\n> > Inner`;
+		const body = extractJsxBody(await mdxToJsx(md));
+		expect(body).toContain('<GithubAlert type="note">');
+		expect(body).toContain('<GithubAlert type="tip">');
+		expect(body).not.toContain("[!TIP]");
+	});
+
+	it.each([
+		["a CRLF line ending", "> [!NOTE]\r\n> Some text", String.raw`{"Some text"}`],
+		["a CR line ending", "> [!NOTE]\r> Some text", String.raw`{"Some text"}`],
+		["text on the marker line", "> [!NOTE] Some\n> text", String.raw`{"Some\ntext"}`],
+	])("removes the whitespace after the marker with %s", async (_name, md, text) => {
+		const body = extractJsxBody(await mdxToJsx(md));
+		expect(body).toContain(`<_components.p>${text}</_components.p>`);
+	});
+
+	it("keeps a nonbreaking space at the start of the body", async () => {
+		const body = extractJsxBody(await mdxToJsx("> [!NOTE]\n> &nbsp;Indented"));
+		expect(body).toContain("\u00A0Indented");
+	});
+
+	it("keeps a hard break on the first body line", async () => {
+		const body = extractJsxBody(await mdxToJsx("> [!NOTE]\n> \\\n> Body"));
+		expect(body).toContain("<_components.br />");
+	});
+
+	it.each([
+		["two trailing spaces", "> [!NOTE]  \n> Body"],
+		["a backslash", "> [!NOTE]\\\n> Body"],
+	])("removes a hard break of %s that ends the marker line", async (_name, md) => {
+		const body = extractJsxBody(await mdxToJsx(md));
+		expect(body).not.toContain("<_components.br />");
+		expect(body).toContain('<_components.p>{"Body"}</_components.p>');
 	});
 
 	it("handles a link inside the alert body", async () => {

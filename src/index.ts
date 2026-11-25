@@ -1,9 +1,11 @@
-import type { Blockquote, Paragraph, PhrasingContent, Root } from "mdast";
+import type { Root } from "mdast";
 import type { MdxJsxFlowElement } from "mdast-util-mdx-jsx";
 
 import { visit } from "unist-util-visit";
 
-const alertRegex = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i;
+// Why not `\s*`: it also matches U+00A0, which `&nbsp;` at the start of the body decodes to. The
+// pattern removes only the spaces and the line ending (LF, CRLF, or CR) of the marker line.
+const alertMarker = /^\[!(?<type>note|tip|important|warning|caution)\][ \t]*(?<eol>\r\n?|\n)?/iu;
 
 /**
  * Remark plugin that transforms GitHub-style alert blockquotes into MDX JSX
@@ -21,94 +23,46 @@ const alertRegex = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i;
  * <GithubAlert type="note">Some informational text</GithubAlert>
  * ```
  */
-function remarkMdxGithubAlerts() {
-	return (tree: Root) => {
-		visit(tree, "blockquote", (node: Blockquote, index, parent) => {
-			if (index === undefined || !parent) {
+function remarkMdxGithubAlerts(): (tree: Root) => undefined {
+	return (tree) => {
+		visit(tree, "blockquote", (node, index, parent) => {
+			const [paragraph] = node.children;
+			if (index == null || parent == null || paragraph?.type !== "paragraph") {
+				return;
+			}
+			const [marker, next] = paragraph.children;
+			if (marker?.type !== "text") {
+				return;
+			}
+			const match = alertMarker.exec(marker.value);
+			const type = match?.groups?.type;
+			const endsLine = match?.groups?.eol != null;
+			if (match == null || type == null) {
 				return;
 			}
 
-			const firstChild = node.children[0];
-			if (!firstChild || firstChild.type !== "paragraph") {
-				return;
-			}
-
-			const firstInline = firstChild.children[0];
-			if (!firstInline || firstInline.type !== "text") {
-				return;
-			}
-
-			const match = alertRegex.exec(firstInline.value);
-			if (!match) {
-				return;
-			}
-
-			const alertType = match[1]?.toLowerCase();
-			if (!alertType) {
-				return;
-			}
-
-			// Strip the [!TYPE] marker and rebuild the first paragraph's children.
-			// The marker text may be followed by a newline within the same text node
-			// (e.g. `[!NOTE]\nSome text`) or by a separate `break` node in the AST.
-			const textAfterMarker = firstInline.value.slice(match[0].length);
-			let remainingChildren: Array<PhrasingContent>;
-
-			if (textAfterMarker.includes("\n")) {
-				// The newline is embedded in the text node — strip the marker and
-				// any leading newlines, keep the rest of the text node + siblings.
-				remainingChildren = [
-					{ ...firstInline, value: textAfterMarker.replace(/^\n+/, "") },
-					...firstChild.children.slice(1),
-				];
+			const rest = marker.value.slice(match[0].length);
+			if (rest === "") {
+				// Why: a hard break (`[!NOTE]` and two spaces) ends the marker line as a node. After a
+				// line ending, a hard break belongs to the body.
+				paragraph.children.splice(0, !endsLine && next?.type === "break" ? 2 : 1);
 			} else {
-				// The newline is represented as a separate `break` AST node (or
-				// there is no newline at all). Skip the marker text node and any
-				// immediately following `break` node.
-				const siblings = firstChild.children.slice(1);
-				if (siblings[0]?.type === "break") {
-					remainingChildren = siblings.slice(1);
-				} else {
-					remainingChildren = siblings;
-				}
-
-				// If there was non-newline text after the marker (e.g. trailing
-				// whitespace that isn't meaningful), only keep it if non-empty after
-				// trimming.
-				const trimmed = textAfterMarker.trim();
-				if (trimmed.length > 0) {
-					remainingChildren = [{ ...firstInline, value: trimmed }, ...remainingChildren];
-				}
+				marker.value = rest;
+			}
+			if (paragraph.children.length === 0) {
+				node.children.shift();
 			}
 
-			// Build the children for the JSX element
-			const children = [...node.children];
-
-			if (remainingChildren.length > 0) {
-				const updatedParagraph: Paragraph = {
-					...firstChild,
-					children: remainingChildren,
-				};
-				children[0] = updatedParagraph;
-			} else {
-				// The first paragraph only contained the marker — remove it entirely
-				children.shift();
-			}
-
-			const jsxNode: MdxJsxFlowElement = {
+			// Why the same `children` array: `visit` walks it next, so a nested alert replaces
+			// itself in the output tree.
+			const alert: MdxJsxFlowElement = {
 				type: "mdxJsxFlowElement",
 				name: "GithubAlert",
-				attributes: [
-					{
-						type: "mdxJsxAttribute",
-						name: "type",
-						value: alertType,
-					},
-				],
-				children,
+				attributes: [{ type: "mdxJsxAttribute", name: "type", value: type.toLowerCase() }],
+				children: node.children,
+				position: node.position,
 			};
-
-			parent.children[index] = jsxNode as unknown as Blockquote;
+			parent.children[index] = alert;
 		});
 	};
 }
