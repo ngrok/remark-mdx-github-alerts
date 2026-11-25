@@ -89,6 +89,7 @@ describe("remarkMdxGithubAlerts", () => {
 
 	it.each([
 		["a CRLF line ending", "> [!NOTE]\r\n> Some text", String.raw`{"Some text"}`],
+		["a CR line ending", "> [!NOTE]\r> Some text", String.raw`{"Some text"}`],
 		["text on the marker line", "> [!NOTE] Some\n> text", String.raw`{"Some\ntext"}`],
 	])("removes the whitespace after the marker with %s", async (_name, md, text) => {
 		const body = extractJsxBody(await mdxToJsx(md));

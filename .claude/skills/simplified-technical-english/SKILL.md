@@ -7,7 +7,7 @@ description: "Write concise, unambiguous technical prose with the ASD-STE100 Sim
 
 These rules are [ASD-STE100](https://www.asd-ste100.org/) Simplified Technical English, adapted to this repo. They are the same rules that the mantle and frontend repos use.
 
-- **In scope:** code comments, JSDoc, `.changeset/*.md`, `README.md`, `AGENTS.md`, `docs/`, commit messages, and PR descriptions.
+- **In scope:** code comments, JSDoc, `.changeset/*.md`, `README.md`, commit messages, and PR descriptions.
 - **Out of scope:** chat replies, generated files, and quoted upstream text.
 - Apply the rules to the prose you write or edit in this task. Do not sweep unrelated prose into the same pull request.
 
@@ -67,4 +67,4 @@ Before you return text, read it for:
 - a comment that restates the code, or one that is over two sentences
 - a reference to a previous state that the reader cannot see
 
-Fix what you find. Report the check in the `Conventions pass:` note that [AGENTS.md](../../../AGENTS.md#before-you-finish) requires.
+Fix what you find.

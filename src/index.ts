@@ -4,8 +4,8 @@ import type { MdxJsxFlowElement } from "mdast-util-mdx-jsx";
 import { visit } from "unist-util-visit";
 
 // Why not `\s*`: it also matches U+00A0, which `&nbsp;` at the start of the body decodes to. The
-// pattern removes only the spaces and the line ending (LF or CRLF) of the marker line.
-const alertMarker = /^\[!(?<type>note|tip|important|warning|caution)\][ \t]*(?<eol>\r?\n)?/iu;
+// pattern removes only the spaces and the line ending (LF, CRLF, or CR) of the marker line.
+const alertMarker = /^\[!(?<type>note|tip|important|warning|caution)\][ \t]*(?<eol>\r\n?|\n)?/iu;
 
 /**
  * Remark plugin that transforms GitHub-style alert blockquotes into MDX JSX
